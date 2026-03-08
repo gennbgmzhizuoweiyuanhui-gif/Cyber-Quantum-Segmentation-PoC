@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Cyber Quantum PoC", page_icon="🛡️")
 
-st.title("🛡️ 量子最適化：サイバー攻撃隔離シミュレータ")
+st.title("量子最適化：サイバー攻撃隔離シミュレータ")
 st.markdown("""
 ### AI増殖時代のセグメンテーション
 AIマルウェアの爆発的な増殖に対し、量子アニーリング（Max-Cut）を用いて
@@ -13,7 +13,7 @@ AIマルウェアの爆発的な増殖に対し、量子アニーリング（Max
 """)
 
 # 設定パラメータ
-num_nodes = st.sidebar.slider("サーバー台数 (AI増殖規模)", 5, 30, 12)
+num_nodes = st.sidebar.slider("サーバー台数 (AI増殖規模)", 5, 30, 15)
 edge_prob = st.sidebar.slider("ネットワーク接続密度", 0.1, 0.5, 0.2)
 
 if st.button("量子最適化による隔離を実行"):
@@ -23,10 +23,14 @@ if st.button("量子最適化による隔離を実行"):
         
         # 2. QUBO構築
         Q = {}
+        # 全てのノードを一旦QUBOに登録（KeyError防止）
+        for node in G.nodes:
+            Q[(node, node)] = 0
+            
         for u, v in G.edges:
-            Q[(u, u)] = Q.get((u, u), 0) - 1
-            Q[(v, v)] = Q.get((v, v), 0) - 1
-            Q[(u, v)] = Q.get((u, v), 0) + 2
+            Q[(u, u)] -= 1
+            Q[(v, v)] -= 1
+            Q[(u, v)] += 2
 
         # 3. 疑似量子アニーリング
         sampler = dimod.SimulatedAnnealingSampler()
@@ -35,7 +39,8 @@ if st.button("量子最適化による隔離を実行"):
 
         # 4. 可視化
         fig, ax = plt.subplots(figsize=(10, 7))
-        color_map = ['#FF4C4C' if best_solution[node] == 1 else '#4C9AFF' for node in G.nodes]
+        # 修正ポイント：.get(node, 0) を使って、計算に含まれなかったノードもエラーにしない
+        color_map = ['#FF4C4C' if best_solution.get(node, 0) == 1 else '#4C9AFF' for node in G.nodes]
         pos = nx.spring_layout(G, seed=42)
         
         nx.draw(G, pos, with_labels=True, node_color=color_map, 
