@@ -23,14 +23,14 @@ if st.button("量子最適化による隔離を実行"):
         
         # 2. QUBO構築
         Q = {}
-        # 全てのノードを一旦QUBOに登録（KeyError防止）
         for node in G.nodes:
             Q[(node, node)] = 0
             
         for u, v in G.edges:
             Q[(u, u)] -= 1
             Q[(v, v)] -= 1
-            Q[(u, v)] += 2
+            # ↓ココを修正！ 未登録なら0として計算する
+            Q[(u, v)] = Q.get((u, v), 0) + 2
 
         # 3. 疑似量子アニーリング
         sampler = dimod.SimulatedAnnealingSampler()
@@ -39,7 +39,6 @@ if st.button("量子最適化による隔離を実行"):
 
         # 4. 可視化
         fig, ax = plt.subplots(figsize=(10, 7))
-        # 修正ポイント：.get(node, 0) を使って、計算に含まれなかったノードもエラーにしない
         color_map = ['#FF4C4C' if best_solution.get(node, 0) == 1 else '#4C9AFF' for node in G.nodes]
         pos = nx.spring_layout(G, seed=42)
         
@@ -47,5 +46,5 @@ if st.button("量子最適化による隔離を実行"):
                 node_size=800, font_color='white', font_weight='bold', edge_color='#D3D3D3')
         
         st.pyplot(fig)
-        st.success(f"計算完了: 通信を遮断すべき境界（Max-Cut）を特定しました。")
+        st.success("計算完了: 通信を遮断すべき境界（Max-Cut）を特定しました。")
         st.info("赤色と青色のグループ間の線をすべて遮断することで、感染拡大を物理的に封じ込めます。")
